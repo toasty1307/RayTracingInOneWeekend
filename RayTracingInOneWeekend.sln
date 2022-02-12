@@ -8,6 +8,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sphere", "Sphere\Sphere.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{B422EF8A-F26C-4B70-AC7F-52BFF73116E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SurfaceNormals", "SurfaceNormals\SurfaceNormals.csproj", "{AC1D25CD-6120-45FE-A9BC-16B6C25C94CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Antialiasing", "Antialiasing\Antialiasing.csproj", "{D18FAC93-A663-4381-86D4-AAD89123687A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,13 @@ Global
 		{B422EF8A-F26C-4B70-AC7F-52BFF73116E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B422EF8A-F26C-4B70-AC7F-52BFF73116E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B422EF8A-F26C-4B70-AC7F-52BFF73116E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC1D25CD-6120-45FE-A9BC-16B6C25C94CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC1D25CD-6120-45FE-A9BC-16B6C25C94CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC1D25CD-6120-45FE-A9BC-16B6C25C94CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC1D25CD-6120-45FE-A9BC-16B6C25C94CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D18FAC93-A663-4381-86D4-AAD89123687A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D18FAC93-A663-4381-86D4-AAD89123687A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D18FAC93-A663-4381-86D4-AAD89123687A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D18FAC93-A663-4381-86D4-AAD89123687A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

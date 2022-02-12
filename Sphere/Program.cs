@@ -85,7 +85,7 @@ internal class Program
             for (var i = 0; i < ImageWidth; i++)
             {
                 var u = (double) i / (ImageWidth - 1);
-                var v = (double) j / (ImageWidth - 1);
+                var v = (double) j / (ImageHeight - 1);
                 var ray = new Ray(origin, lowerLeftCorner + horizontal * (float) u + vertical * (float) v - origin);
                 var color = RayColor(ray);
                 image.SetPixel(i, j, color);

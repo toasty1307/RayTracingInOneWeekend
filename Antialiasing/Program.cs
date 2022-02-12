@@ -5,17 +5,17 @@ using System.Numerics;
 using Common;
 using Serilog;
 
-namespace SurfaceNormals;
+namespace Antialiasing;
 
 internal class Program
 {
     public const double AspectRatio = 16.0 / 9.0;
-    public const int ImageWidth = 4096;
+    public const int ImageWidth = 1024;
     public const int ImageHeight = (int) (ImageWidth / AspectRatio);
     
     public const float ViewportHeight = 2.0f;
-    public const double ViewportWidth = AspectRatio * ViewportHeight;
-    public const float FocalLength = 1.0f;
+
+    public const int SampleSize = 100;
 
     public static void Main()
     {
@@ -29,18 +29,18 @@ internal class Program
             .ActualMain();
     }
 
-    public Color RayColor(Ray ray, Hittable world)
+    public Vector3 RayColor(Ray ray, Hittable world)
     {
         var rec = new HitRecord();
         if (world.Hit(ray, 0, double.PositiveInfinity, ref rec))
         {
             var colorVec = (rec.Normal + Vector3.One) / 2;
-            return Color.FromArgb(255, (int) (colorVec.X * 255), (int) (colorVec.Y * 255), (int) (colorVec.Z * 255));
+            return colorVec;
         }
         var unitDirection = Vector3.Normalize(ray.Direction);
         var t = unitDirection.Y / 2 + 0.5f;
         var colorVector = (1 - t) * Vector3.One + t * new Vector3(0.5f, 0.7f, 1);
-        return Color.FromArgb(255, (int) (colorVector.X * 255), (int) (colorVector.Y * 255), (int) (colorVector.Z * 255));
+        return colorVector;
     }
     
     private void ActualMain()
@@ -50,11 +50,10 @@ internal class Program
         // wondows
 #pragma warning disable CA1416
         var image = new Bitmap(ImageWidth, ImageHeight, PixelFormat.Format32bppArgb);
-        
-        var origin = Vector3.Zero;
-        var horizontal = Vector3.UnitX * (float) ViewportWidth;
-        var vertical = Vector3.UnitY * ViewportHeight;
-        var lowerLeftCorner = origin - horizontal / 2 - vertical / 2 - Vector3.UnitZ * FocalLength;
+
+        var camera = new Camera();
+
+        var random = new Random();
         
         var world = new HittableList(new List<Hittable>
         {
@@ -68,21 +67,38 @@ internal class Program
             Log.Information("{Percent}% Done", Math.Floor(100 - (float) j / ImageHeight * 100));
             for (var i = 0; i < ImageWidth; i++)
             {
-                var u = (double) i / (ImageWidth - 1);
-                var v = (double) j / (ImageHeight - 1);
-                var ray = new Ray(origin, lowerLeftCorner + horizontal * (float) u + vertical * (float) v - origin);
-                var color = RayColor(ray, world);
-                image.SetPixel(i, j, color);
+                var colorVector = Vector3.Zero;
+                for (var k = 0; k < SampleSize; k++)
+                {
+                    var u = (i + random.NextDouble()) / (ImageWidth - 1);
+                    var v = (j + random.NextDouble()) / (ImageHeight - 1);
+                    var ray = camera.GetRay((float) u, (float) v);
+                    colorVector += RayColor(ray, world);
+                }
+                WriteColor(image, colorVector, i, j);
             }
         }
 
         image.RotateFlip(RotateFlipType.Rotate180FlipX);
         image.Save("image.png", ImageFormat.Png);
         
-#pragma warning restore CA1416
         Console.SetCursorPosition(0, top);
         Log.Information("{Percent}% Done", 100);
         Log.Information("Done! Opening file...");
         Process.Start(new ProcessStartInfo("image.png") { UseShellExecute = true });
     }
+
+    public Color VecToColor(Vector3 vector3)
+    {
+        return Color.FromArgb(255, (int) (vector3.X * 255), (int) (vector3.Y * 255), (int) (vector3.Z * 255));
+    }
+
+    public void WriteColor(Bitmap map, Vector3 color, int x, int y)
+    {
+        const float scale = 1.0f / SampleSize;
+        color *= scale;
+        map.SetPixel(x, y, VecToColor(color));
+    }
+#pragma warning restore CA1416
+
 }
