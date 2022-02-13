@@ -10,15 +10,15 @@ namespace SomeoneStopMe;
 internal class Program
 {
     public static readonly Random Random = new();
-    public const double AspectRatio = 16.0 / 9.0;
-    public const int ImageWidth = 3840; // 3840
-    public const int Pieces = 10000;
-    public int ThreadCount = -1; // -1 for max
-    public const int ImageHeight = (int) (ImageWidth / AspectRatio); // 2160
-    public const int MaxDepth = 50;
-    public const int SpheresHalfRow = 11;
-    
-    public const int SampleSize = 500;
+    private const double AspectRatio = 16.0 / 9.0;
+    private const int ImageWidth = 3840; // 3840
+    private const int Pieces = 10000;
+    private int _threadCount = -1; // -1 for max
+    private const int ImageHeight = (int) (ImageWidth / AspectRatio); // 2160
+    private const int MaxDepth = 50;
+    private const int SpheresHalfRow = 11;
+
+    private const int SampleSize = 500;
 
     public static void Main()
     {
@@ -42,7 +42,7 @@ internal class Program
         }
     }
 
-    public Vector3 RayColor(Ray ray, Hittable world, int depth)
+    private Vector3 RayColor(Ray ray, Hittable world, int depth)
     {
         var rec = new HitRecord();
         
@@ -67,11 +67,10 @@ internal class Program
         Log.Information("Starting...");
         var divide = (int)Math.Sqrt(Pieces);
         var height = ImageHeight / divide;
-        var width = ImageWidth / divide;
         ThreadPool.GetAvailableThreads(out var workerThreads, out _);
-        if (ThreadCount == -1)
-            ThreadCount = Math.Min(height, workerThreads);
-        Log.Information("Using {ThreadCount} threads of out {WorkerThreads} worker threads", ThreadCount, workerThreads);
+        if (_threadCount == -1)
+            _threadCount = Math.Min(height, workerThreads);
+        Log.Information("Using {ThreadCount} threads of out {WorkerThreads} worker threads", _threadCount, workerThreads);
         // wondows
 #pragma warning disable CA1416
 
@@ -88,14 +87,14 @@ internal class Program
         
         var camera = new Camera(20, (float) AspectRatio, lookFrom, lookAt, Vector3.UnitY, 0.1f, 10);
 
-        var rowsForOneThread = height / ThreadCount;
+        var rowsForOneThread = height / _threadCount;
 
         var top = Console.GetCursorPosition().Top;
 
         for (var i = 10 - 1; i >= 0; i--)
         {
             Console.SetCursorPosition(0, top);
-            Log.Information("Will start {ThreadCount} threads in {Seconds} seconds. Your pc might die, last time to stop this!", ThreadCount, i);
+            Log.Information("Will start {ThreadCount} threads in {Seconds} seconds. Your pc might die, last time to stop this!", _threadCount, i);
             Thread.Sleep(1000);
         }
 
@@ -105,23 +104,17 @@ internal class Program
         for (var w = 0; w < divide; w++)
         {
             height = ImageHeight / divide * (w + 1);
-            width = 0;
             for (var e = 0; e < divide; e++)
             {
-                var height1 = height;
-                var width2 = width;
-                var e2 = e;
-                var w1 = w;
                 var threads = new List<Thread>();
-                var start = height1 - 1;
-                width2 += ImageWidth / divide;
-                for (var i = 0; i < ThreadCount; i++)
+                var start = height - 1;
+                for (var i = 0; i < _threadCount; i++)
                 {
                     var i1 = i;
                     var s = start;
                     start -= rowsForOneThread;
                     var width1 = ImageWidth / divide;
-                    var e1 = e2;
+                    var e1 = e;
                     var thread = new Thread(() =>
                     {
                         var image = new Bitmap(ImageWidth, ImageHeight, PixelFormat.Format32bppArgb);
@@ -144,8 +137,6 @@ internal class Program
 
                         image.Save($"output{i1}.png");
                         image.Dispose();
-                        // no logging cuz it slow
-                        // Log.Information("Thread {ThreadId} finished", i1);
                     })
                     {
                         IsBackground = false
@@ -158,30 +149,28 @@ internal class Program
                 Log.Information("Starting threads...");
                 threads.ForEach(thread => thread.Start());
 
-                while (threads.Any(x => x.IsAlive))
-                {
-                }
+                while (threads.Any(x => x.IsAlive)) { }
 
                 Log.Information("Merging images...");
 
                 try
                 {
-                    var bitmaps = new Bitmap[ThreadCount];
-                    for (var j = 0; j < ThreadCount; j++)
+                    var bitmaps = new Bitmap[_threadCount];
+                    for (var j = 0; j < _threadCount; j++)
                     {
                         bitmaps[j] = new Bitmap($"output{j}.png");
                     }
 
                     var finalImage = MergeBitmaps(bitmaps);
                     finalImage.RotateFlip(RotateFlipType.Rotate180FlipX);
-                    finalImage.Save($"part{w1 * divide + e2}.png");
+                    finalImage.Save($"part{w * divide + e}.png");
 
-                    for (var i = 0; i < ThreadCount; i++)
+                    for (var i = 0; i < _threadCount; i++)
                     {
                         bitmaps[i].Dispose();
                     }
 
-                    Log.Information("Part {Part} combined and saved!", w1 * divide + e2);
+                    Log.Information("Part {Part} combined and saved!", w * divide + e);
                 }
                 catch (OutOfMemoryException)
                 {
@@ -195,16 +184,14 @@ internal class Program
 
         var pieces = new Bitmap[Pieces];
         for (var i = 0; i < Pieces; i++)
-        {
             pieces[i] = new Bitmap($"part{i}.png");
-        }
         
         var output = MergeBitmaps(pieces);
         output.Save($"0.png");
+        
         for (var i = 0; i < Pieces; i++)
-        {
             pieces[i].Dispose();
-        }
+
         Log.Information("All parts combined and saved!");
         Process.Start(new ProcessStartInfo("0.png") { UseShellExecute = true });
         Console.ReadLine();
@@ -219,12 +206,12 @@ internal class Program
         return result;
     }
 
-    public Color VecToColor(Vector3 vector3)
+    private Color VecToColor(Vector3 vector3)
     {
         return Color.FromArgb(255, (int) (vector3.X * 255), (int) (vector3.Y * 255), (int) (vector3.Z * 255));
     }
 
-    public void WriteColor(Bitmap map, Vector3 color, int x, int y)
+    private void WriteColor(Bitmap map, Vector3 color, int x, int y)
     {
         const float scale = 1.0f / SampleSize;
         color.X = (float) Math.Sqrt(color.X * scale);
@@ -234,15 +221,13 @@ internal class Program
     }
 #pragma warning restore CA1416
 
-    public HittableList RandomScene()
+    private HittableList RandomScene()
     {
         var world = new HittableList();
 
         var groundMaterial = new Lambertian(Vector3.One * 0.5f);
         world.Add(new Sphere(new Vector3(0, -1000, 0), 1000, groundMaterial));
         
-        // many smol balls
-
         for (var i = -SpheresHalfRow; i < SpheresHalfRow; i++)
         {
             for (var j = -SpheresHalfRow; j < SpheresHalfRow; j++)
@@ -250,37 +235,22 @@ internal class Program
                 var chooseMat = Random.NextDouble();
                 var center = new Vector3((float) (i + 0.9*Random.NextDouble()), 0.2f, (float) (j + 0.9*Random.NextDouble()));
 
-                if ((center - new Vector3(4, 0.2f, 0)).Length() > 0.9)
+                if (!((center - new Vector3(4, 0.2f, 0)).Length() > 0.9)) continue;
+                Material sphereMaterial = chooseMat switch
                 {
-                    Material sphereMaterial;
-
-                    if (chooseMat < 0.8)
-                    {
-                        // diffuse
-                        sphereMaterial = new Lambertian(new Vector3((float) (Random.NextDouble() * Random.NextDouble()),
-                            (float) (Random.NextDouble() * Random.NextDouble()),
-                            (float) (Random.NextDouble() * Random.NextDouble())));
-                        world.Add(new Sphere(center, 0.2f, sphereMaterial));
-                    }
-                    else if (chooseMat < 0.95)
-                    {
-                        // le metal
-                        sphereMaterial = new Metal(new Vector3((float) (0.5f * (1 + Random.NextDouble())),
-                            (float) (0.5f * (1 + Random.NextDouble())),
-                            (float) (0.5f * (1 + Random.NextDouble()))), 0.5f * Random.NextDouble());
-                        world.Add(new Sphere(center, 0.2f, sphereMaterial));
-                    }
-                    else
-                    {
-                        sphereMaterial = new Dielectric(1.5f);
-                        world.Add(new Sphere(center, 0.2f, sphereMaterial));
-                    }
-                }
+                    < 0.8 => new Lambertian(new Vector3((float) (Random.NextDouble() * Random.NextDouble()),
+                        (float) (Random.NextDouble() * Random.NextDouble()),
+                        (float) (Random.NextDouble() * Random.NextDouble()))),
+                    < 0.95 => new Metal(
+                        new Vector3((float) (0.5f * (1 + Random.NextDouble())),
+                            (float) (0.5f * (1 + Random.NextDouble())), (float) (0.5f * (1 + Random.NextDouble()))),
+                        0.5f * Random.NextDouble()),
+                    _ => new Dielectric(1.5f)
+                };
+                world.Add(new Sphere(center, 0.2f, sphereMaterial));
             }
         }
-        
-        
-        // three big balls
+
         var material1 = new Dielectric(1.5f);
         world.Add(new Sphere(new Vector3(0, 1, 0), 1, material1));
         
