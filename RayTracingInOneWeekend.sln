@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefocusBlur", "DefocusBlur\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinalRender", "FinalRender\FinalRender.csproj", "{F6FD3A19-A9D0-4D4D-9269-173C73AD4210}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SomeoneStopMe", "SomeoneStopMe\SomeoneStopMe.csproj", "{7E89543A-09AE-4F36-82EA-A8A5BDEC45A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,9 @@ Global
 		{F6FD3A19-A9D0-4D4D-9269-173C73AD4210}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6FD3A19-A9D0-4D4D-9269-173C73AD4210}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6FD3A19-A9D0-4D4D-9269-173C73AD4210}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E89543A-09AE-4F36-82EA-A8A5BDEC45A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E89543A-09AE-4F36-82EA-A8A5BDEC45A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E89543A-09AE-4F36-82EA-A8A5BDEC45A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E89543A-09AE-4F36-82EA-A8A5BDEC45A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
