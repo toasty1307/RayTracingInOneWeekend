@@ -18,7 +18,7 @@ internal class Program
     public const int MaxDepth = 50;
     public const int SpheresHalfRow = 11;
     
-    public const int SampleSize = 20;
+    public const int SampleSize = 500;
 
     public static void Main()
     {
