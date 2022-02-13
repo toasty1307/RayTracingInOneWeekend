@@ -1,18 +1,17 @@
 ﻿using System.Numerics;
+using Common;
 
-namespace Common;
+namespace DiffuseMaterials;
 
 public class Sphere : Hittable
 {
     public readonly Vector3 Center;
     public readonly float Radius;
-    public Material Material;
 
-    public Sphere(Vector3 center, float radius, Material material)
+    public Sphere(Vector3 center, float radius)
     {
         Center = center;
         Radius = radius;
-        Material = material;
     }
 
     public override bool Hit(Ray ray, double tMin, double tMax, ref HitRecord rec)
@@ -39,7 +38,6 @@ public class Sphere : Hittable
         {
             T = root,
             Point = p,
-            Material = Material
         };
         
         rec.SetFaceNormal(ray, (p - Center) / Radius);

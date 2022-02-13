@@ -9,7 +9,8 @@ public struct HitRecord
     public Vector3 Normal;
     public double T;
     public bool FrontFace;
-    
+    public Material Material;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // ig this is the same as `inline void`
     public void SetFaceNormal(Ray ray, Vector3 outwardsNormal)
     {

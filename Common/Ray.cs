@@ -19,6 +19,8 @@ public class Ray
         init => _direction = value;
     }
 
+    public Ray() { }
+    
     public Ray(Vector3 origin, Vector3 direction)
     {
         _origin = origin;
