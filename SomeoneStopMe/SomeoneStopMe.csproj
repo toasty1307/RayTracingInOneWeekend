@@ -11,4 +11,8 @@
       <ProjectReference Include="..\Common\Common.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="SixLabors.ImageSharp" Version="2.0.0" />
+    </ItemGroup>
+
 </Project>

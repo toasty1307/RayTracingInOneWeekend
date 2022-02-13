@@ -1,7 +1,8 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using Serilog;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace OutputAnImage;
 
@@ -28,7 +29,7 @@ internal class Program
         var top = Console.GetCursorPosition().Top;
         // wondows
 #pragma warning disable CA1416
-        var image = new Bitmap(ImageWidth, ImageHeight, PixelFormat.Format32bppArgb);
+        var image = new Image<Argb32>(ImageWidth, ImageHeight);
         
         for (var i = 0; i < ImageHeight; i++)
         {
@@ -49,11 +50,11 @@ internal class Program
                 var ir = Math.Floor(r * 255);
                 var ig = Math.Floor(g * 255);
                 var ib = Math.Floor(b * 255);
-                var color = Color.FromArgb(255, (int) ir, (int) ig, (int) ib);
-                image.SetPixel(j, i, color);
+                var color = Color.FromRgba((byte) ir, (byte) ig, (byte) ib, 255);
+                image[j, i] = color;
             }
         }
-        image.Save("image.png", ImageFormat.Png);
+        image.Save("image.png", new PngEncoder());
 #pragma warning restore CA1416
         Console.SetCursorPosition(0, top);
         Log.Information("{Percent}% Done", 100);

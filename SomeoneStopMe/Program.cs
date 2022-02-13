@@ -1,9 +1,12 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Numerics;
 using Common;
 using Serilog;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace SomeoneStopMe;
 
@@ -71,8 +74,6 @@ internal class Program
         if (_threadCount == -1)
             _threadCount = Math.Min(height, workerThreads);
         Log.Information("Using {ThreadCount} threads of out {WorkerThreads} worker threads", _threadCount, workerThreads);
-        // wondows
-#pragma warning disable CA1416
 
         var time = DateTime.Now;
         var world = RandomScene();
@@ -117,7 +118,7 @@ internal class Program
                     var e1 = e;
                     var thread = new Thread(() =>
                     {
-                        var image = new Bitmap(ImageWidth, ImageHeight, PixelFormat.Format32bppArgb);
+                        var image = new Image<Argb32>(ImageWidth, ImageHeight);
                         for (var j = s; j >= s + 1 - rowsForOneThread; j--)
                         {
                             for (var k = width1 * e1; k < width1 * (e1 + 1); k++)
@@ -135,7 +136,7 @@ internal class Program
                             }
                         }
 
-                        image.Save($"output{i1}.png");
+                        image.SaveAsPng($"output{i1}.png");
                         image.Dispose();
                     })
                     {
@@ -155,15 +156,15 @@ internal class Program
 
                 try
                 {
-                    var bitmaps = new Bitmap[_threadCount];
+                    var bitmaps = new Image[_threadCount];
                     for (var j = 0; j < _threadCount; j++)
                     {
-                        bitmaps[j] = new Bitmap($"output{j}.png");
+                        bitmaps[j] = Image.Load<Argb32>($"output{j}.png", new PngDecoder());
                     }
 
                     var finalImage = MergeBitmaps(bitmaps);
-                    finalImage.RotateFlip(RotateFlipType.Rotate180FlipX);
-                    finalImage.Save($"part{w * divide + e}.png");
+                    finalImage.Mutate(x => x.Rotate(RotateMode.Rotate180));
+                    finalImage.Save($"part{w * divide + e}.png", new PngEncoder());
 
                     for (var i = 0; i < _threadCount; i++)
                     {
@@ -182,12 +183,13 @@ internal class Program
         time2 = DateTime.Now;
         Log.Information("Done! Time taken to render: {TimeTaken}", time2 - time);
 
-        var pieces = new Bitmap[Pieces];
+        var pieces = new Image[Pieces];
         for (var i = 0; i < Pieces; i++)
-            pieces[i] = new Bitmap($"part{i}.png");
+            pieces[i] = Image.Load<Argb32>($"part{i}.png", new PngDecoder());
         
         var output = MergeBitmaps(pieces);
-        output.Save($"0.png");
+        output.Mutate(x => x.Flip(FlipMode.Horizontal));
+        output.Save($"0.png", new PngEncoder());
         
         for (var i = 0; i < Pieces; i++)
             pieces[i].Dispose();
@@ -196,28 +198,30 @@ internal class Program
         Process.Start(new ProcessStartInfo("0.png") { UseShellExecute = true });
         Console.ReadLine();
     }
-    
-    private Bitmap MergeBitmaps(IEnumerable<Bitmap> bitmaps) 
+
+    private Image<Argb32> MergeBitmaps(IEnumerable<Image> bitmaps)
     {
-        var result = new Bitmap(ImageWidth, ImageHeight, PixelFormat.Format32bppArgb);
-        using var g = Graphics.FromImage(result);
+        var img = new Image<Argb32>(ImageWidth, ImageHeight);
         foreach (var bitmap in bitmaps)
-            g.DrawImage(bitmap, Point.Empty);
-        return result;
+        {
+            img.Mutate(x => x.DrawImage(bitmap, PixelColorBlendingMode.Add, 1));
+        }
+
+        return img;
     }
 
-    private Color VecToColor(Vector3 vector3)
+    private Argb32 VecToColor(Vector3 vector3)
     {
-        return Color.FromArgb(255, (int) (vector3.X * 255), (int) (vector3.Y * 255), (int) (vector3.Z * 255));
+        return new Argb32(vector3.X, vector3.Y, vector3.Z);
     }
 
-    private void WriteColor(Bitmap map, Vector3 color, int x, int y)
+    private void WriteColor(Image<Argb32> map, Vector3 color, int x, int y)
     {
         const float scale = 1.0f / SampleSize;
         color.X = (float) Math.Sqrt(color.X * scale);
         color.Y = (float) Math.Sqrt(color.Y * scale);
         color.Z = (float) Math.Sqrt(color.Z * scale);
-        map.SetPixel(x, y, VecToColor(color));
+        map[x, y] = VecToColor(color);
     }
 #pragma warning restore CA1416
 
