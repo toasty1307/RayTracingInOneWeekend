@@ -2,11 +2,7 @@
 using System.Numerics;
 using Common;
 using Serilog;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using Image = SixLabors.ImageSharp.Image;
+using SkiaSharp;
 
 namespace SomeoneStopMe;
 
@@ -15,7 +11,7 @@ internal class Program
     public static readonly Random Random = new();
     private const double AspectRatio = 16.0 / 9.0;
     private const int ImageWidth = 3840; // 3840
-    private const int Pieces = 10000;
+    private const int Pieces = 100 * 100;
     private int _threadCount = -1; // -1 for max
     private const int ImageHeight = (int) (ImageWidth / AspectRatio); // 2160
     private const int MaxDepth = 50;
@@ -90,9 +86,11 @@ internal class Program
 
         var rowsForOneThread = height / _threadCount;
 
+        Log.Information("I cant wait 10secs everytime i go to debug, so 2 instead");
+
         var top = Console.GetCursorPosition().Top;
 
-        for (var i = 10 - 1; i >= 0; i--)
+        for (var i = 2 - 1; i >= 0; i--)
         {
             Console.SetCursorPosition(0, top);
             Log.Information("Will start {ThreadCount} threads in {Seconds} seconds. Your pc might die, last time to stop this!", _threadCount, i);
@@ -118,7 +116,7 @@ internal class Program
                     var e1 = e;
                     var thread = new Thread(() =>
                     {
-                        var image = new Image<Argb32>(ImageWidth, ImageHeight);
+                        var image = new SKBitmap(ImageWidth, ImageHeight);
                         for (var j = s; j >= s + 1 - rowsForOneThread; j--)
                         {
                             for (var k = width1 * e1; k < width1 * (e1 + 1); k++)
@@ -136,7 +134,8 @@ internal class Program
                             }
                         }
 
-                        image.SaveAsPng($"output{i1}.png");
+                        using var stream = File.Create($"output{i1}.png");
+                        image.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
                         image.Dispose();
                     })
                     {
@@ -156,15 +155,19 @@ internal class Program
 
                 try
                 {
-                    var bitmaps = new Image[_threadCount];
+                    var bitmaps = new SKBitmap[_threadCount];
                     for (var j = 0; j < _threadCount; j++)
                     {
-                        bitmaps[j] = Image.Load<Argb32>($"output{j}.png", new PngDecoder());
+                        using var s = File.Open($"output{j}.png", FileMode.Open);
+                        bitmaps[j] = SKBitmap.Decode(s);
                     }
 
                     var finalImage = MergeBitmaps(bitmaps);
-                    finalImage.Mutate(x => x.Rotate(RotateMode.Rotate180));
-                    finalImage.Save($"part{w * divide + e}.png", new PngEncoder());
+                    using var canvas = new SKCanvas(finalImage);
+                    canvas.RotateDegrees(180);
+                    canvas.Save();
+                    using var stream = File.Create($"part{w * divide + e}.png");
+                    finalImage.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
 
                     for (var i = 0; i < _threadCount; i++)
                     {
@@ -183,45 +186,52 @@ internal class Program
         time2 = DateTime.Now;
         Log.Information("Done! Time taken to render: {TimeTaken}", time2 - time);
 
-        var pieces = new Image[Pieces];
+        var pieces = new SKBitmap[Pieces];
         for (var i = 0; i < Pieces; i++)
-            pieces[i] = Image.Load<Argb32>($"part{i}.png", new PngDecoder());
+        {
+            using var stream = File.Open($"part{i}.png", FileMode.Open);
+            pieces[i] = SKBitmap.Decode(stream);
+        }
         
         var output = MergeBitmaps(pieces);
-        output.Mutate(x => x.Flip(FlipMode.Horizontal));
-        output.Save($"0.png", new PngEncoder());
+        using var milk = File.Create($"0.png");
+        output.Encode(SKEncodedImageFormat.Png, 100).SaveTo(milk);
         
         for (var i = 0; i < Pieces; i++)
             pieces[i].Dispose();
 
+        milk.Close();
+        
         Log.Information("All parts combined and saved!");
         Process.Start(new ProcessStartInfo("0.png") { UseShellExecute = true });
         Console.ReadLine();
     }
 
-    private Image<Argb32> MergeBitmaps(IEnumerable<Image> bitmaps)
+    private SKBitmap MergeBitmaps(IEnumerable<SKBitmap> bitmaps)
     {
-        var img = new Image<Argb32>(ImageWidth, ImageHeight);
+        var img = new SKBitmap(ImageWidth, ImageHeight);
+        using var canvas = new SKCanvas(img);
         foreach (var bitmap in bitmaps)
         {
-            img.Mutate(x => x.DrawImage(bitmap, PixelColorBlendingMode.Add, 1));
+            canvas.DrawBitmap(bitmap, new SKPoint(0, 0));
         }
 
+        canvas.Save();
         return img;
     }
 
-    private Argb32 VecToColor(Vector3 vector3)
+    private SKColor VecToColor(Vector3 vector3)
     {
-        return new Argb32(vector3.X, vector3.Y, vector3.Z);
+        return new SKColor((byte) (vector3.X * 255), (byte) (vector3.Y * 255), (byte) (vector3.Z * 255), 255);
     }
 
-    private void WriteColor(Image<Argb32> map, Vector3 color, int x, int y)
+    private void WriteColor(SKBitmap map, Vector3 color, int x, int y)
     {
         const float scale = 1.0f / SampleSize;
         color.X = (float) Math.Sqrt(color.X * scale);
         color.Y = (float) Math.Sqrt(color.Y * scale);
         color.Z = (float) Math.Sqrt(color.Z * scale);
-        map[x, y] = VecToColor(color);
+        map.SetPixel(x, y, VecToColor(color));
     }
 #pragma warning restore CA1416
 
