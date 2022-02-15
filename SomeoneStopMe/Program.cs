@@ -168,7 +168,6 @@ internal class Program
                         using var se = File.Open(file, FileMode.Open);
                         var bitmap = SKBitmap.Decode(se);
                         canvas.DrawBitmap(bitmap, new SKPoint(0, 0));
-                        Log.Information("Combined {Files} files", i + 1);
                         Console.SetCursorPosition(0, top);
                         bitmap.Dispose();
                     }
