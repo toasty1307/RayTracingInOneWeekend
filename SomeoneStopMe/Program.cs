@@ -1,5 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Numerics;
+using System.Threading;
 using Common;
 using Serilog;
 using SkiaSharp;
@@ -10,8 +15,8 @@ internal class Program
 {
     public static readonly Random Random = new();
     private const double AspectRatio = 16.0 / 9.0;
-    private const int ImageWidth = 3840; // 3840
-    private const int Pieces = 100 * 100;
+    private const int ImageWidth = 15360;
+    private const int Pieces = 10000 * 10000;
     private int _threadCount = -1; // -1 for max
     private const int ImageHeight = (int) (ImageWidth / AspectRatio); // 2160
     private const int MaxDepth = 50;
@@ -186,20 +191,25 @@ internal class Program
         time2 = DateTime.Now;
         Log.Information("Done! Time taken to render: {TimeTaken}", time2 - time);
 
-        var pieces = new SKBitmap[Pieces];
-        for (var i = 0; i < Pieces; i++)
+        var image = new SKBitmap(3840, 2160);
+        var ee = new SKCanvas(image);
+        Log.Information("Combining parts...");
+        top = Console.GetCursorPosition().Top;
+        for (var i = 0; i < 8; i++)
         {
-            using var stream = File.Open($"part{i}.png", FileMode.Open);
-            pieces[i] = SKBitmap.Decode(stream);
+            var file = $"part{i}.png";
+            using var stream = File.Open(file, FileMode.Open);
+            var bitmap = SKBitmap.Decode(stream);
+            ee.DrawBitmap(bitmap, new SKPoint(0, 0));
+            Log.Information("Combined {Files} files", i + 1);
+            Console.SetCursorPosition(0, top);
+            bitmap.Dispose();
         }
-        
-        var output = MergeBitmaps(pieces);
-        using var milk = File.Create($"0.png");
-        output.Encode(SKEncodedImageFormat.Png, 100).SaveTo(milk);
-        
-        for (var i = 0; i < Pieces; i++)
-            pieces[i].Dispose();
+        Log.Information("Combined all files");
 
+        ee.Save();
+        using var milk = File.Create("0.png");
+        image.Encode(SKEncodedImageFormat.Png, 100).SaveTo(milk);
         milk.Close();
         
         Log.Information("All parts combined and saved!");
