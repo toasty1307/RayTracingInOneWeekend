@@ -160,25 +160,23 @@ internal class Program
 
                 try
                 {
-                    var bitmaps = new SKBitmap[_threadCount];
-                    for (var j = 0; j < _threadCount; j++)
+                    var output = new SKBitmap(ImageWidth, ImageHeight);
+                    using var canvas = new SKCanvas(output);
+                    for (var i = 0; i < _threadCount; i++)
                     {
-                        using var s = File.Open($"output{j}.png", FileMode.Open);
-                        bitmaps[j] = SKBitmap.Decode(s);
+                        var file = $"output{i}.png";
+                        using var se = File.Open(file, FileMode.Open);
+                        var bitmap = SKBitmap.Decode(se);
+                        canvas.DrawBitmap(bitmap, new SKPoint(0, 0));
+                        Log.Information("Combined {Files} files", i + 1);
+                        Console.SetCursorPosition(0, top);
+                        bitmap.Dispose();
                     }
-
-                    var finalImage = MergeBitmaps(bitmaps);
-                    using var canvas = new SKCanvas(finalImage);
                     canvas.RotateDegrees(180);
                     canvas.Save();
                     using var stream = File.Create($"part{w * divide + e}.png");
-                    finalImage.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
-
-                    for (var i = 0; i < _threadCount; i++)
-                    {
-                        bitmaps[i].Dispose();
-                    }
-
+                    output.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
+                    output.Dispose();
                     Log.Information("Part {Part} combined and saved!", w * divide + e);
                 }
                 catch (OutOfMemoryException)
@@ -195,7 +193,7 @@ internal class Program
         var ee = new SKCanvas(image);
         Log.Information("Combining parts...");
         top = Console.GetCursorPosition().Top;
-        for (var i = 0; i < 8; i++)
+        for (var i = 0; i < Pieces; i++)
         {
             var file = $"part{i}.png";
             using var stream = File.Open(file, FileMode.Open);
