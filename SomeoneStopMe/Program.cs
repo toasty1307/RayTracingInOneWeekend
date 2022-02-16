@@ -15,8 +15,8 @@ internal class Program
 {
     public static readonly Random Random = new();
     private const double AspectRatio = 16.0 / 9.0;
-    private const int ImageWidth = 15360;
-    private const int Pieces = 1000 * 1000;
+    private const int ImageWidth = 1920 * 2 * 2;
+    private const int Pieces = 300 * 300;
     private int _threadCount = -1; // -1 for max
     private const int ImageHeight = (int) (ImageWidth / AspectRatio); // 2160
     private const int MaxDepth = 50;
