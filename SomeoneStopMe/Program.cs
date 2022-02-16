@@ -166,7 +166,7 @@ internal class Program
                     {
                         var file = $"output{i}.png";
                         using var se = File.Open(file, FileMode.Open);
-                        var bitmap = SKBitmap.Decode(se);
+                        using var bitmap = SKBitmap.Decode(se);
                         canvas.DrawBitmap(bitmap, new SKPoint(0, 0));
                         Console.SetCursorPosition(0, top);
                         bitmap.Dispose();
@@ -196,7 +196,7 @@ internal class Program
         {
             var file = $"part{i}.png";
             using var stream = File.Open(file, FileMode.Open);
-            var bitmap = SKBitmap.Decode(stream);
+            using var bitmap = SKBitmap.Decode(stream);
             ee.DrawBitmap(bitmap, new SKPoint(0, 0));
             Log.Information("Combined {Files} files", i + 1);
             Console.SetCursorPosition(0, top);
